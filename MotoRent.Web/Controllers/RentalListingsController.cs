@@ -23,10 +23,22 @@ public class RentalListingsController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? search)
     {
-        var listings = await dbContext.RentalListings
-            .AsNoTracking()
+        var query = dbContext.RentalListings.AsNoTracking();
+        var term = search?.Trim();
+
+        if (!string.IsNullOrEmpty(term))
+        {
+            query = query.Where(listing =>
+                listing.Make.Contains(term) ||
+                listing.Model.Contains(term) ||
+                listing.City.Contains(term));
+        }
+
+        ViewData["Search"] = term;
+
+        var listings = await query
             .OrderByDescending(listing => listing.Id)
             .ToListAsync();
 
