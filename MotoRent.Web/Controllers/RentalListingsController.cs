@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MotoRent.Web.Data;
 using MotoRent.Web.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MotoRent.Web.Controllers;
 
@@ -18,6 +19,18 @@ public class RentalListingsController : Controller
     {
         this.dbContext = dbContext;
         this.userManager = userManager;
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> Index()
+    {
+        var listings = await dbContext.RentalListings
+            .AsNoTracking()
+            .OrderByDescending(listing => listing.Id)
+            .ToListAsync();
+
+        return View(listings);
     }
 
     [HttpGet]

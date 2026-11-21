@@ -1,0 +1,29 @@
+﻿@model IReadOnlyList<MotoRent.Web.Models.RentalListing>
+
+@{
+    ViewData["Title"] = "Мотори под наем";
+}
+
+<h1 class="my-4">@ViewData["Title"]</h1>
+
+@if (Model.Count == 0)
+{
+    <p>Все още няма публикувани обяви.</p>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var listing in Model)
+        {
+            <div class="col-sm-6 col-lg-4">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h5">@listing.Make @listing.Model</h2>
+                        <p class="text-muted mb-2">@listing.City</p>
+                        <p class="fw-bold mb-0">@listing.DailyPrice.ToString("0.00") € / ден</p>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+}
