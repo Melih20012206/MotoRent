@@ -1,0 +1,15 @@
+﻿@model MotoRent.Web.Models.RentalListing
+
+@{
+    ViewData["Title"] = $"{Model.Make} {Model.Model}";
+}
+
+<h1 class="my-4">@ViewData["Title"]</h1>
+
+<p class="text-muted">@Model.City</p>
+<p class="fw-bold">@Model.DailyPrice.ToString("0.00") € / ден</p>
+
+<h2 class="h5">Описание</h2>
+<p style="white-space: pre-wrap">@Model.Description</p>
+
+<a asp-action="Index" class="btn btn-outline-secondary">Към всички обяви</a>

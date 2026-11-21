@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MotoRent.Web.Data;
 using MotoRent.Web.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace MotoRent.Web.Controllers;
 
@@ -31,6 +31,22 @@ public class RentalListingsController : Controller
             .ToListAsync();
 
         return View(listings);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> Details(int id)
+    {
+        var listing = await dbContext.RentalListings
+            .AsNoTracking()
+            .SingleOrDefaultAsync(listing => listing.Id == id);
+
+        if (listing is null)
+        {
+            return NotFound();
+        }
+
+        return View(listing);
     }
 
     [HttpGet]
