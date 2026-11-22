@@ -1,0 +1,25 @@
+﻿@model MotoRent.Web.Models.RentalListing
+
+@{
+    ViewData["Title"] = "Изтрий обявата";
+}
+
+<h1 class="my-4">@ViewData["Title"]</h1>
+
+<p>Сигурен ли си, че искаш да изтриеш тази обява?</p>
+
+<dl>
+    <dt>Мотор</dt>
+    <dd>@Model.Make @Model.Model</dd>
+
+    <dt>Град</dt>
+    <dd>@Model.City</dd>
+
+    <dt>Цена на ден</dt>
+    <dd>@Model.DailyPrice.ToString("0.00") €</dd>
+</dl>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    <button type="submit" class="btn btn-danger">Изтрий обявата</button>
+    <a asp-action="Mine" class="btn btn-outline-secondary">Отказ</a>
+</form>

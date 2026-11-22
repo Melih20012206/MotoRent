@@ -44,6 +44,9 @@ else
                             <a asp-action="Details"
                                asp-route-id="@listing.Id"
                                class="btn btn-sm btn-outline-primary">Виж обявата</a>
+                            <a asp-action="Delete"
+                               asp-route-id="@listing.Id"
+                               class="btn btn-sm btn-outline-danger">Изтрий</a>
                         </td>
                     </tr>
                 }

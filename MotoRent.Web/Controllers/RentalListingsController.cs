@@ -179,6 +179,53 @@ public class RentalListingsController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var listing = await dbContext.RentalListings
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId);
+
+        if (listing is null)
+        {
+            return NotFound();
+        }
+
+        return View(listing);
+    }
+
+    [HttpPost]
+    [ActionName(nameof(Delete))]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var deletedCount = await dbContext.RentalListings
+            .Where(item => item.Id == id && item.OwnerId == ownerId)
+            .ExecuteDeleteAsync();
+
+        if (deletedCount == 0)
+        {
+            return NotFound();
+        }
+
+        TempData["SuccessMessage"] = "Обявата е изтрита успешно.";
+        return RedirectToAction(nameof(Mine));
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var owner = await userManager.GetUserAsync(User);
