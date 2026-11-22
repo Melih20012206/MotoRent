@@ -3,21 +3,34 @@
 @{
     ViewData["Title"] = "Мотори под наем";
     var search = ViewData["Search"] as string;
+    var sort = ViewData["Sort"] as string ?? "newest";
 }
 
 <h1 class="my-4">@ViewData["Title"]</h1>
 
 <form asp-action="Index" method="get" class="mb-4">
-    <label for="search" class="form-label">Марка, модел или град</label>
-    <div class="d-flex flex-wrap gap-2">
-        <input id="search"
-               name="search"
-               type="search"
-               value="@search"
-               class="form-control w-auto" />
-        <button type="submit" class="btn btn-primary">Търси</button>
+    <div class="d-flex flex-wrap align-items-end gap-2">
+        <div>
+            <label for="search" class="form-label">Марка, модел или град</label>
+            <input id="search"
+                   name="search"
+                   type="search"
+                   value="@search"
+                   class="form-control" />
+        </div>
 
-        @if (!string.IsNullOrEmpty(search))
+        <div>
+            <label for="sort" class="form-label">Подреди по</label>
+            <select id="sort" name="sort" class="form-select">
+                <option value="newest" selected="@(sort == "newest")">Най-нови</option>
+                <option value="price-asc" selected="@(sort == "price-asc")">Цена – от ниска към висока</option>
+                <option value="price-desc" selected="@(sort == "price-desc")">Цена – от висока към ниска</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Покажи</button>
+
+        @if (!string.IsNullOrEmpty(search) || sort != "newest")
         {
             <a asp-action="Index" class="btn btn-outline-secondary">Изчисти</a>
         }

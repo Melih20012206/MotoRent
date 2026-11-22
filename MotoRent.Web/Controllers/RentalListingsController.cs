@@ -27,7 +27,7 @@ public class RentalListingsController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search)
+    public async Task<IActionResult> Index(string? search, string? sort)
     {
         var query = dbContext.RentalListings.AsNoTracking();
         var term = search?.Trim();
@@ -40,11 +40,28 @@ public class RentalListingsController : Controller
                 listing.City.Contains(term));
         }
 
-        ViewData["Search"] = term;
+        var selectedSort = sort switch
+        {
+            "price-asc" => "price-asc",
+            "price-desc" => "price-desc",
+            _ => "newest"
+        };
 
-        var listings = await query
-            .OrderByDescending(listing => listing.Id)
-            .ToListAsync();
+        var orderedQuery = selectedSort switch
+        {
+            "price-asc" => query
+                .OrderBy(listing => listing.DailyPrice)
+                .ThenByDescending(listing => listing.Id),
+            "price-desc" => query
+                .OrderByDescending(listing => listing.DailyPrice)
+                .ThenByDescending(listing => listing.Id),
+            _ => query.OrderByDescending(listing => listing.Id)
+        };
+
+        ViewData["Search"] = term;
+        ViewData["Sort"] = selectedSort;
+
+        var listings = await orderedQuery.ToListAsync();
 
         return View(listings);
     }
