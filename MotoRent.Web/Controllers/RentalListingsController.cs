@@ -102,6 +102,83 @@ public class RentalListingsController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var listing = await dbContext.RentalListings
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId);
+
+        if (listing is null)
+        {
+            return NotFound();
+        }
+
+        ViewData["ListingId"] = listing.Id;
+
+        return View(new CreateRentalListingViewModel
+        {
+            Make = listing.Make,
+            Model = listing.Model,
+            City = listing.City,
+            DailyPrice = listing.DailyPrice,
+            Description = listing.Description
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        int id,
+        [Bind("Make,Model,City,DailyPrice,Description")] CreateRentalListingViewModel input)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var listing = await dbContext.RentalListings
+            .SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId);
+
+        if (listing is null)
+        {
+            return NotFound();
+        }
+
+        if (input.DailyPrice is decimal price && decimal.Round(price, 2) != price)
+        {
+            ModelState.AddModelError(
+                nameof(input.DailyPrice),
+                "Въведи цена с най-много два знака след десетичния разделител.");
+        }
+
+        if (!ModelState.IsValid || input.DailyPrice is not decimal dailyPrice)
+        {
+            ViewData["ListingId"] = id;
+            return View(input);
+        }
+
+        listing.Make = input.Make.Trim();
+        listing.Model = input.Model.Trim();
+        listing.City = input.City.Trim();
+        listing.DailyPrice = dailyPrice;
+        listing.Description = input.Description.Trim();
+
+        await dbContext.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Промените по обявата са запазени.";
+        return RedirectToAction(nameof(Mine));
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var owner = await userManager.GetUserAsync(User);

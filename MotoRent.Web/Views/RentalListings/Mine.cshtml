@@ -9,6 +9,11 @@
     <a asp-action="Create" class="btn btn-primary">Публикувай мотор</a>
 </div>
 
+@if (TempData["SuccessMessage"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+
 @if (Model.Count == 0)
 {
     <p>Все още нямаш публикувани обяви.</p>
@@ -33,6 +38,9 @@ else
                         <td>@listing.City</td>
                         <td>@listing.DailyPrice.ToString("0.00") €</td>
                         <td class="text-end">
+                            <a asp-action="Edit"
+                               asp-route-id="@listing.Id"
+                               class="btn btn-sm btn-outline-secondary">Редактирай</a>
                             <a asp-action="Details"
                                asp-route-id="@listing.Id"
                                class="btn btn-sm btn-outline-primary">Виж обявата</a>
