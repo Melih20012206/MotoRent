@@ -8,6 +8,11 @@
 
 <h1 class="my-4">@ViewData["Title"]</h1>
 
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <a asp-action="Mine" class="btn btn-outline-primary mb-3">Моите обяви</a>
+}
+
 <form asp-action="Index" method="get" class="mb-4">
     <div class="d-flex flex-wrap align-items-end gap-2">
         <div>

@@ -83,6 +83,25 @@ public class RentalListingsController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> Mine()
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var listings = await dbContext.RentalListings
+            .AsNoTracking()
+            .Where(listing => listing.OwnerId == ownerId)
+            .OrderByDescending(listing => listing.Id)
+            .ToListAsync();
+
+        return View(listings);
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var owner = await userManager.GetUserAsync(User);
