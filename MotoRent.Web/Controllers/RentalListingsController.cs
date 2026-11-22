@@ -10,6 +10,10 @@ namespace MotoRent.Web.Controllers;
 [Authorize]
 public class RentalListingsController : Controller
 {
+    private const int MinimumPublisherAge = 18;
+    private static readonly TimeZoneInfo BulgariaTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Europe/Sofia");
+
     private readonly ApplicationDbContext dbContext;
     private readonly UserManager<IdentityUser> userManager;
 
@@ -62,8 +66,18 @@ public class RentalListingsController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        var owner = await userManager.GetUserAsync(User);
+        if (owner is null)
+        {
+            return Forbid();
+        }
+
+        ViewData["NeedsDateOfBirth"] = dbContext.Entry(owner)
+            .Property<DateOnly?>(ApplicationDbContext.DateOfBirthProperty)
+            .CurrentValue is null;
+
         return View(new CreateRentalListingViewModel());
     }
 
@@ -71,6 +85,44 @@ public class RentalListingsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateRentalListingViewModel input)
     {
+        var owner = await userManager.GetUserAsync(User);
+        if (owner is null)
+        {
+            return Forbid();
+        }
+
+        var storedDate = dbContext.Entry(owner)
+            .Property<DateOnly?>(ApplicationDbContext.DateOfBirthProperty);
+        var needsDateOfBirth = storedDate.CurrentValue is null;
+        ViewData["NeedsDateOfBirth"] = needsDateOfBirth;
+
+        if (!needsDateOfBirth)
+        {
+            ModelState.Remove(nameof(input.DateOfBirth));
+        }
+
+        var dateOfBirth = storedDate.CurrentValue ?? input.DateOfBirth;
+        var today = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, BulgariaTimeZone));
+
+        if (dateOfBirth is null)
+        {
+            if (ModelState.GetFieldValidationState(nameof(input.DateOfBirth)) !=
+                Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
+            {
+                ModelState.AddModelError(nameof(input.DateOfBirth), "Въведи дата на раждане.");
+            }
+        }
+        else if (dateOfBirth.Value > today.AddYears(-MinimumPublisherAge))
+        {
+            var errorKey = needsDateOfBirth ? nameof(input.DateOfBirth) : string.Empty;
+            var message = dateOfBirth.Value > today
+                ? "Датата на раждане не може да е в бъдещето."
+                : "За да публикуваш обява, трябва да имаш навършени 18 години.";
+
+            ModelState.AddModelError(errorKey, message);
+        }
+
         if (input.DailyPrice is decimal price && decimal.Round(price, 2) != price)
         {
             ModelState.AddModelError(
@@ -83,11 +135,9 @@ public class RentalListingsController : Controller
             return View(input);
         }
 
-        var owner = await userManager.GetUserAsync(User);
-
-        if (owner is null)
+        if (needsDateOfBirth)
         {
-            return Forbid();
+            storedDate.CurrentValue = dateOfBirth;
         }
 
         var listing = new RentalListing
@@ -101,7 +151,16 @@ public class RentalListingsController : Controller
         };
 
         dbContext.RentalListings.Add(listing);
-        await dbContext.SaveChangesAsync();
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException) when (needsDateOfBirth)
+        {
+            ModelState.AddModelError(string.Empty,
+                "Профилът ти беше обновен междувременно. Опитай да публикуваш отново.");
+            return View(input);
+        }
 
         TempData["SuccessMessage"] = "Обявата е публикувана успешно.";
         return RedirectToAction(nameof(Create));

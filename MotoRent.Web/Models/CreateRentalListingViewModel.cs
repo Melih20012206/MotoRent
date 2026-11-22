@@ -4,6 +4,10 @@ namespace MotoRent.Web.Models;
 
 public class CreateRentalListingViewModel
 {
+    [Display(Name = "Дата на раждане")]
+    [DataType(DataType.Date)]
+    public DateOnly? DateOfBirth { get; set; }
+
     [Required]
     [StringLength(60)]
     [Display(Name = "Марка")]

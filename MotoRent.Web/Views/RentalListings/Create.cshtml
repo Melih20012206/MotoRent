@@ -14,6 +14,20 @@
 <form asp-action="Create" method="post" class="col-lg-7">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+    @if (ViewData["NeedsDateOfBirth"] is true)
+    {
+        <div class="mb-3">
+            <label asp-for="DateOfBirth" class="form-label"></label>
+            <input asp-for="DateOfBirth" type="date" class="form-control"
+                   aria-describedby="date-of-birth-help" required />
+            <div id="date-of-birth-help" class="form-text">
+                За да публикуваш обява, трябва да имаш навършени 18 години.
+                Датата се запазва в профила ти и не се показва в обявата.
+            </div>
+            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+        </div>
+    }
+
     <div class="mb-3">
         <label asp-for="Make" class="form-label"></label>
         <input asp-for="Make" class="form-control" />

@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using MotoRent.Web.Models;
 
 namespace MotoRent.Web.Data;
 
 public class ApplicationDbContext : IdentityDbContext
 {
+    public const string DateOfBirthProperty = "DateOfBirth";
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
@@ -16,6 +19,11 @@ public class ApplicationDbContext : IdentityDbContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        builder.Entity<IdentityUser>()
+            .Property<DateOnly?>(DateOfBirthProperty)
+            .HasColumnType("date")
+            .IsConcurrencyToken();
 
         builder.Entity<RentalListing>(listing =>
         {
