@@ -118,6 +118,104 @@ public class RentalRequestsController : Controller
         return RedirectToAction("Details", "RentalListings", new { id = listing.Id });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Incoming()
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var requests = await dbContext.RentalRequests
+            .AsNoTracking()
+            .Include(request => request.RentalListing)
+            .Where(request => request.RentalListing.OwnerId == ownerId)
+            .OrderByDescending(request => request.Id)
+            .ToListAsync();
+
+        return View(requests);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Accept(int id)
+    {
+        return UpdateStatusAsync(id, RentalRequestStatus.Accepted);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Reject(int id)
+    {
+        return UpdateStatusAsync(id, RentalRequestStatus.Rejected);
+    }
+
+    private async Task<IActionResult> UpdateStatusAsync(
+        int id,
+        RentalRequestStatus newStatus)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var pendingRequest = dbContext.RentalRequests.Where(request =>
+            request.Id == id &&
+            request.RentalListing.OwnerId == ownerId &&
+            request.Status == RentalRequestStatus.Pending);
+
+        var updatedCount = 0;
+
+        try
+        {
+            if (newStatus == RentalRequestStatus.Accepted)
+            {
+                await using var transaction = await dbContext.Database
+                    .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+                updatedCount = await pendingRequest
+                    .Where(request => !dbContext.RentalRequests.Any(other =>
+                        other.RentalListingId == request.RentalListingId &&
+                        other.Status == RentalRequestStatus.Accepted &&
+                        other.StartDate <= request.EndDate &&
+                        other.EndDate >= request.StartDate))
+                    .ExecuteUpdateAsync(setters =>
+                        setters.SetProperty(request => request.Status, newStatus));
+
+                await transaction.CommitAsync();
+            }
+            else
+            {
+                updatedCount = await pendingRequest.ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(request => request.Status, newStatus));
+            }
+        }
+        catch (Microsoft.Data.SqlClient.SqlException exception) when (exception.Number == 1205)
+        {
+            TempData["ErrorMessage"] = "Има едновременна промяна. Опитай отново.";
+            return RedirectToAction(nameof(Incoming));
+        }
+
+        if (updatedCount == 0)
+        {
+            TempData["ErrorMessage"] = newStatus == RentalRequestStatus.Accepted
+                ? "Заявката вече не чака отговор, не е за твоя обява или датите са заети."
+                : "Заявката вече не чака отговор или не е за твоя обява.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = newStatus == RentalRequestStatus.Accepted
+                ? "Заявката е приета."
+                : "Заявката е отказана.";
+        }
+
+        return RedirectToAction(nameof(Incoming));
+    }
+
     private IActionResult ShowCreateForm(
         RentalListing listing,
         CreateRentalRequestViewModel input)

@@ -37,6 +37,15 @@
                                asp-controller="RentalListings"
                                asp-action="Index">Обяви</a>
                         </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="RentalRequests"
+                                   asp-action="Incoming">Получени заявки</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
