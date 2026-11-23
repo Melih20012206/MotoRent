@@ -1,10 +1,17 @@
 ﻿@model MotoRent.Web.Models.RentalListing
 
+@inject Microsoft.AspNetCore.Identity.UserManager<Microsoft.AspNetCore.Identity.IdentityUser> UserManager
+
 @{
     ViewData["Title"] = $"{Model.Make} {Model.Model}";
 }
 
 <h1 class="my-4">@ViewData["Title"]</h1>
+
+@if (TempData["SuccessMessage"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
 
 <p class="text-muted">@Model.City</p>
 
@@ -20,5 +27,13 @@
 
 <h2 class="h5">Описание</h2>
 <p style="white-space: pre-wrap">@Model.Description</p>
+
+@if (UserManager.GetUserId(User) != Model.OwnerId)
+{
+    <a asp-controller="RentalRequests"
+       asp-action="Create"
+       asp-route-id="@Model.Id"
+       class="btn btn-primary">Заяви наем</a>
+}
 
 <a asp-action="Index" class="btn btn-outline-secondary">Към всички обяви</a>

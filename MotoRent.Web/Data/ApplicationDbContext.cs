@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using MotoRent.Web.Models;
 
 namespace MotoRent.Web.Data;
@@ -15,6 +15,8 @@ public class ApplicationDbContext : IdentityDbContext
     }
 
     public DbSet<RentalListing> RentalListings => Set<RentalListing>();
+
+    public DbSet<RentalRequest> RentalRequests => Set<RentalRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -38,6 +40,19 @@ public class ApplicationDbContext : IdentityDbContext
             listing.ToTable(table => table.HasCheckConstraint(
                 "CK_RentalListings_DailyPrice",
                 "[DailyPrice] BETWEEN 1 AND 10000"));
+        });
+
+        builder.Entity<RentalRequest>(request =>
+        {
+            request.HasOne(x => x.RentalListing)
+                .WithMany()
+                .HasForeignKey(x => x.RentalListingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            request.HasOne(x => x.Renter)
+                .WithMany()
+                .HasForeignKey(x => x.RenterId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

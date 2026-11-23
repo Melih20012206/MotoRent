@@ -277,6 +277,39 @@ namespace MotoRent.Web.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MotoRent.Web.Models.RentalRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("RentalListingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RenterId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalListingId");
+
+                    b.HasIndex("RenterId");
+
+                    b.ToTable("RentalRequests");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -337,6 +370,25 @@ namespace MotoRent.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("MotoRent.Web.Models.RentalRequest", b =>
+                {
+                    b.HasOne("MotoRent.Web.Models.RentalListing", "RentalListing")
+                        .WithMany()
+                        .HasForeignKey("RentalListingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Renter")
+                        .WithMany()
+                        .HasForeignKey("RenterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RentalListing");
+
+                    b.Navigation("Renter");
                 });
 #pragma warning restore 612, 618
         }
