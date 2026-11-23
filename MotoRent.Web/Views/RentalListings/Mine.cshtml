@@ -6,6 +6,12 @@
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 my-4">
     <h1 class="mb-0">@ViewData["Title"]</h1>
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-warning" role="alert">@errorMessage</div>
+    }
+
     <a asp-controller="RentalRequests"
        asp-action="Incoming"
        class="btn btn-outline-primary mb-3">Получени заявки</a>

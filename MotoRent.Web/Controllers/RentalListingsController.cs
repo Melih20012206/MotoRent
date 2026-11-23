@@ -225,13 +225,23 @@ public class RentalListingsController : Controller
             return Forbid();
         }
 
-        var deletedCount = await dbContext.RentalListings
-            .Where(item => item.Id == id && item.OwnerId == ownerId)
+        var ownedListing = dbContext.RentalListings
+            .Where(listing => listing.Id == id && listing.OwnerId == ownerId);
+
+        var deletedCount = await ownedListing
+            .Where(listing => !dbContext.RentalRequests
+                .Any(request => request.RentalListingId == listing.Id))
             .ExecuteDeleteAsync();
 
         if (deletedCount == 0)
         {
-            return NotFound();
+            if (!await ownedListing.AnyAsync())
+            {
+                return NotFound();
+            }
+
+            TempData["ErrorMessage"] = "Обявата има заявки за наем и не може да бъде изтрита.";
+            return RedirectToAction(nameof(Mine));
         }
 
         TempData["SuccessMessage"] = "Обявата е изтрита успешно.";
