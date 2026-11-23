@@ -6,6 +6,10 @@
 
 <h1 class="my-4">@ViewData["Title"]</h1>
 
+<a asp-action="Outgoing" class="btn btn-outline-primary mb-3">
+    Изпратени заявки
+</a>
+
 @if (TempData["SuccessMessage"] is string successMessage)
 {
     <div class="alert alert-success" role="status">@successMessage</div>

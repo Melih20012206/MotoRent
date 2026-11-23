@@ -138,6 +138,26 @@ public class RentalRequestsController : Controller
         return View(requests);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Outgoing()
+    {
+        var renterId = userManager.GetUserId(User);
+
+        if (renterId is null)
+        {
+            return Forbid();
+        }
+
+        var requests = await dbContext.RentalRequests
+            .AsNoTracking()
+            .Include(request => request.RentalListing)
+            .Where(request => request.RenterId == renterId)
+            .OrderByDescending(request => request.Id)
+            .ToListAsync();
+
+        return View(requests);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public Task<IActionResult> Accept(int id)
