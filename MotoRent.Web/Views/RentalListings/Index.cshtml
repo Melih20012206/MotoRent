@@ -2,8 +2,14 @@
 
 @{
     ViewData["Title"] = "Мотори под наем";
+
     var search = ViewData["Search"] as string;
     var sort = ViewData["Sort"] as string ?? "newest";
+    var category = ViewData["Category"] as MotoRent.Web.Models.MotorcycleCategory?;
+    var categories = Html.GetEnumSelectList<MotoRent.Web.Models.MotorcycleCategory>();
+    var selectedCategoryValue = category.HasValue
+        ? ((int)category.Value).ToString()
+        : "";
 }
 
 <h1 class="my-4">@ViewData["Title"]</h1>
@@ -25,17 +31,35 @@
         </div>
 
         <div>
+            <label for="category" class="form-label">Категория</label>
+            <select id="category" name="category" class="form-select">
+                <option value="">Всички категории</option>
+                @foreach (var item in categories)
+                {
+                    <option value="@item.Value"
+                            selected="@(item.Value == selectedCategoryValue)">
+                        @item.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div>
             <label for="sort" class="form-label">Подреди по</label>
             <select id="sort" name="sort" class="form-select">
                 <option value="newest" selected="@(sort == "newest")">Най-нови</option>
-                <option value="price-asc" selected="@(sort == "price-asc")">Цена – от ниска към висока</option>
-                <option value="price-desc" selected="@(sort == "price-desc")">Цена – от висока към ниска</option>
+                <option value="price-asc" selected="@(sort == "price-asc")">
+                    Цена – от ниска към висока
+                </option>
+                <option value="price-desc" selected="@(sort == "price-desc")">
+                    Цена – от висока към ниска
+                </option>
             </select>
         </div>
 
         <button type="submit" class="btn btn-primary">Покажи</button>
 
-        @if (!string.IsNullOrEmpty(search) || sort != "newest")
+        @if (!string.IsNullOrEmpty(search) || category.HasValue || sort != "newest")
         {
             <a asp-action="Index" class="btn btn-outline-secondary">Изчисти</a>
         }
@@ -45,9 +69,9 @@
 @if (Model.Count == 0)
 {
     <p>
-        @(string.IsNullOrEmpty(search)
+        @(string.IsNullOrEmpty(search) && !category.HasValue
             ? "Все още няма публикувани обяви."
-            : "Няма обяви за това търсене.")
+            : "Няма обяви по избраните критерии.")
 </p>
 }
 else

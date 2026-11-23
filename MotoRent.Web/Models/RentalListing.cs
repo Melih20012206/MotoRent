@@ -7,6 +7,8 @@ public class RentalListing
 {
     public int Id { get; set; }
 
+    public MotorcycleCategory? Category { get; set; }
+
     [Required]
     [StringLength(60)]
     public string Make { get; set; } = string.Empty;

@@ -8,6 +8,11 @@ public class CreateRentalListingViewModel
     [DataType(DataType.Date)]
     public DateOnly? DateOfBirth { get; set; }
 
+    [Required(ErrorMessage = "Избери категория.")]
+    [EnumDataType(typeof(MotorcycleCategory), ErrorMessage = "Избери валидна категория.")]
+    [Display(Name = "Категория")]
+    public MotorcycleCategory? Category { get; set; }
+
     [Required]
     [StringLength(60)]
     [Display(Name = "Марка")]

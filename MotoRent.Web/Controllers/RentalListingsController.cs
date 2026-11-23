@@ -27,7 +27,10 @@ public class RentalListingsController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? sort)
+    public async Task<IActionResult> Index(
+        string? search,
+        string? sort,
+        MotorcycleCategory? category)
     {
         var query = dbContext.RentalListings.AsNoTracking();
         var term = search?.Trim();
@@ -38,6 +41,13 @@ public class RentalListingsController : Controller
                 listing.Make.Contains(term) ||
                 listing.Model.Contains(term) ||
                 listing.City.Contains(term));
+        }
+
+        if (category is MotorcycleCategory selectedCategory &&
+            Enum.IsDefined(selectedCategory))
+        {
+            query = query.Where(listing => listing.Category == selectedCategory);
+            ViewData["Category"] = selectedCategory;
         }
 
         var selectedSort = sort switch
@@ -124,6 +134,7 @@ public class RentalListingsController : Controller
 
         return View(new CreateRentalListingViewModel
         {
+            Category = listing.Category,
             Make = listing.Make,
             Model = listing.Model,
             City = listing.City,
@@ -136,7 +147,8 @@ public class RentalListingsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         int id,
-        [Bind("Make,Model,City,DailyPrice,Description")] CreateRentalListingViewModel input)
+        [Bind("Category,Make,Model,City,DailyPrice,Description")]
+        CreateRentalListingViewModel input)
     {
         var ownerId = userManager.GetUserId(User);
 
@@ -166,6 +178,7 @@ public class RentalListingsController : Controller
             return View(input);
         }
 
+        listing.Category = input.Category;
         listing.Make = input.Make.Trim();
         listing.Model = input.Model.Trim();
         listing.City = input.City.Trim();
@@ -229,6 +242,7 @@ public class RentalListingsController : Controller
     public async Task<IActionResult> Create()
     {
         var owner = await userManager.GetUserAsync(User);
+
         if (owner is null)
         {
             return Forbid();
@@ -246,6 +260,7 @@ public class RentalListingsController : Controller
     public async Task<IActionResult> Create(CreateRentalListingViewModel input)
     {
         var owner = await userManager.GetUserAsync(User);
+
         if (owner is null)
         {
             return Forbid();
@@ -270,7 +285,9 @@ public class RentalListingsController : Controller
             if (ModelState.GetFieldValidationState(nameof(input.DateOfBirth)) !=
                 Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
             {
-                ModelState.AddModelError(nameof(input.DateOfBirth), "Въведи дата на раждане.");
+                ModelState.AddModelError(
+                    nameof(input.DateOfBirth),
+                    "Въведи дата на раждане.");
             }
         }
         else if (dateOfBirth.Value > today.AddYears(-MinimumPublisherAge))
@@ -302,6 +319,7 @@ public class RentalListingsController : Controller
 
         var listing = new RentalListing
         {
+            Category = input.Category,
             Make = input.Make.Trim(),
             Model = input.Model.Trim(),
             City = input.City.Trim(),
@@ -311,14 +329,17 @@ public class RentalListingsController : Controller
         };
 
         dbContext.RentalListings.Add(listing);
+
         try
         {
             await dbContext.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException) when (needsDateOfBirth)
         {
-            ModelState.AddModelError(string.Empty,
+            ModelState.AddModelError(
+                string.Empty,
                 "Профилът ти беше обновен междувременно. Опитай да публикуваш отново.");
+
             return View(input);
         }
 
