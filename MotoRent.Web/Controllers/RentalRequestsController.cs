@@ -175,6 +175,38 @@ public class RentalRequestsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var renterId = userManager.GetUserId(User);
+
+        if (renterId is null)
+        {
+            return Forbid();
+        }
+
+        var updatedCount = await dbContext.RentalRequests
+            .Where(request =>
+                request.Id == id &&
+                request.RenterId == renterId &&
+                request.Status == RentalRequestStatus.Pending)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(
+                request => request.Status,
+                RentalRequestStatus.Cancelled));
+
+        if (updatedCount == 0)
+        {
+            TempData["ErrorMessage"] = "Заявката вече не може да бъде оттеглена.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Заявката е оттеглена.";
+        }
+
+        return RedirectToAction(nameof(Outgoing));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public Task<IActionResult> Accept(int id)
     {
         return UpdateStatusAsync(id, RentalRequestStatus.Accepted);

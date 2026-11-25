@@ -1,4 +1,5 @@
-﻿@model IReadOnlyList<MotoRent.Web.Models.RentalRequest>
+﻿@using MotoRent.Web.Models
+@model IReadOnlyList<RentalRequest>
 
 @{
     ViewData["Title"] = "Получени заявки";
@@ -42,9 +43,10 @@ else
                 {
                     var status = request.Status switch
                     {
-                        MotoRent.Web.Models.RentalRequestStatus.Pending => "Чака отговор",
-                        MotoRent.Web.Models.RentalRequestStatus.Accepted => "Приета",
-                        MotoRent.Web.Models.RentalRequestStatus.Rejected => "Отказана",
+                        RentalRequestStatus.Pending => "Чака отговор",
+                        RentalRequestStatus.Accepted => "Приета",
+                        RentalRequestStatus.Rejected => "Отказана",
+                        RentalRequestStatus.Cancelled => "Оттеглена",
                         _ => "Неизвестен статус"
                     };
 
@@ -60,7 +62,7 @@ else
                         <td>@request.EndDate.ToString("dd.MM.yyyy")</td>
                         <td>@status</td>
                         <td>
-                            @if (request.Status == MotoRent.Web.Models.RentalRequestStatus.Pending)
+                            @if (request.Status == RentalRequestStatus.Pending)
                             {
                                 <div class="d-flex flex-wrap gap-2">
                                     <form asp-controller="RentalRequests"
