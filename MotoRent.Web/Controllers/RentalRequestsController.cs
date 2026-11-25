@@ -102,6 +102,21 @@ public class RentalRequestsController : Controller
             return ShowCreateForm(listing, input);
         }
 
+        var datesAreBooked = await dbContext.RentalRequests.AnyAsync(request =>
+            request.RentalListingId == listing.Id &&
+            request.Status == RentalRequestStatus.Accepted &&
+            request.StartDate <= endDate &&
+            request.EndDate >= startDate);
+
+        if (datesAreBooked)
+        {
+            ModelState.AddModelError(
+                nameof(input.StartDate),
+                "Моторът вече е резервиран за част от избрания период.");
+
+            return ShowCreateForm(listing, input);
+        }
+
         dbContext.RentalRequests.Add(new RentalRequest
         {
             RentalListingId = listing.Id,
