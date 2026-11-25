@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MotoRent.Web.Data;
+using MotoRent.Web.Models;
 
 namespace MotoRent.Web.Areas.Admin.Controllers;
 
@@ -7,9 +10,23 @@ namespace MotoRent.Web.Areas.Admin.Controllers;
 [Authorize(Roles = "Administrator")]
 public class DashboardController : Controller
 {
-    [HttpGet]
-    public IActionResult Index()
+    private readonly ApplicationDbContext dbContext;
+
+    public DashboardController(ApplicationDbContext dbContext)
     {
-        return View();
+        this.dbContext = dbContext;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var model = new AdminDashboardViewModel
+        {
+            TotalListings = await dbContext.RentalListings.CountAsync(),
+            PendingRequests = await dbContext.RentalRequests.CountAsync(
+                request => request.Status == RentalRequestStatus.Pending)
+        };
+
+        return View(model);
     }
 }

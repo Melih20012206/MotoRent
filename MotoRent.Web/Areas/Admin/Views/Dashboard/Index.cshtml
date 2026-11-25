@@ -1,6 +1,28 @@
-﻿@{
+﻿@model MotoRent.Web.Models.AdminDashboardViewModel
+
+@{
     Layout = "/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Администрация";
 }
 
 <h1 class="my-4">@ViewData["Title"]</h1>
+
+<div class="row g-3">
+    <div class="col-sm-6">
+        <section class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Общо обяви</h2>
+                <p class="display-6 mb-0">@Model.TotalListings</p>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-sm-6">
+        <section class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Заявки, които чакат отговор</h2>
+                <p class="display-6 mb-0">@Model.PendingRequests</p>
+            </div>
+        </section>
+    </div>
+</div>
