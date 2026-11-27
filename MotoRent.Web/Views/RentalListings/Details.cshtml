@@ -54,3 +54,26 @@
        asp-route-id="@listing.Id"
        class="btn btn-primary">Заяви наем</a>
 }
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    var isFavorite = ViewData["IsFavorite"] is true;
+
+    <form asp-area=""
+          asp-controller="Favorites"
+          asp-action="@(isFavorite ? "Remove" : "Add")"
+          asp-route-id="@listing.Id"
+          method="post"
+          class="d-inline">
+        <button type="submit" class="btn btn-outline-danger">
+            @(isFavorite ? "♥ Премахни от любими" : "♡ Добави в любими")
+        </button>
+    </form>
+}
+else
+{
+    <a asp-area="Identity"
+       asp-page="/Account/Login"
+       asp-route-returnUrl="@Url.Action("Details", "RentalListings", new { id = listing.Id })"
+       class="btn btn-outline-danger">♡ Добави в любими</a>
+}

@@ -115,6 +115,12 @@ public class RentalListingsController : Controller
             availability.Add(new RentalAvailabilityDay(date, isBooked));
         }
 
+        var userId = userManager.GetUserId(User);
+
+        ViewData["IsFavorite"] = userId is not null &&
+            await dbContext.FavoriteListings.AnyAsync(favorite =>
+                favorite.UserId == userId && favorite.RentalListingId == listing.Id);
+
         return View(new RentalListingDetailsViewModel
         {
             Listing = listing,

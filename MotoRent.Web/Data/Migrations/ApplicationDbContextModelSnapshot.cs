@@ -228,6 +228,21 @@ namespace MotoRent.Web.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("MotoRent.Web.Models.FavoriteListing", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("RentalListingId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RentalListingId");
+
+                    b.HasIndex("RentalListingId");
+
+                    b.ToTable("FavoriteListings");
+                });
+
             modelBuilder.Entity("MotoRent.Web.Models.RentalListing", b =>
                 {
                     b.Property<int>("Id")
@@ -359,6 +374,25 @@ namespace MotoRent.Web.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MotoRent.Web.Models.FavoriteListing", b =>
+                {
+                    b.HasOne("MotoRent.Web.Models.RentalListing", "RentalListing")
+                        .WithMany()
+                        .HasForeignKey("RentalListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentalListing");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MotoRent.Web.Models.RentalListing", b =>

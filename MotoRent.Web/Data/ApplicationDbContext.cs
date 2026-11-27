@@ -17,6 +17,7 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<RentalListing> RentalListings => Set<RentalListing>();
 
     public DbSet<RentalRequest> RentalRequests => Set<RentalRequest>();
+    public DbSet<FavoriteListing> FavoriteListings => Set<FavoriteListing>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -53,6 +54,21 @@ public class ApplicationDbContext : IdentityDbContext
                 .WithMany()
                 .HasForeignKey(x => x.RenterId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FavoriteListing>(favorite =>
+        {
+            favorite.HasKey(x => new { x.UserId, x.RentalListingId });
+
+            favorite.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            favorite.HasOne(x => x.RentalListing)
+                .WithMany()
+                .HasForeignKey(x => x.RentalListingId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

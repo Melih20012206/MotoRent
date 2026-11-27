@@ -45,6 +45,12 @@
                                    asp-controller="RentalRequests"
                                    asp-action="Outgoing">Заявки</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="Favorites"
+                                   asp-action="Index">Моите любими</a>
+                            </li>
 
                             @if (User.IsInRole("Administrator"))
                             {
