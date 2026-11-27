@@ -292,6 +292,33 @@ namespace MotoRent.Web.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MotoRent.Web.Models.RentalListingImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("RentalListingId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalListingId");
+
+                    b.ToTable("RentalListingImages");
+                });
+
             modelBuilder.Entity("MotoRent.Web.Models.RentalRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -404,6 +431,17 @@ namespace MotoRent.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("MotoRent.Web.Models.RentalListingImage", b =>
+                {
+                    b.HasOne("MotoRent.Web.Models.RentalListing", "RentalListing")
+                        .WithMany()
+                        .HasForeignKey("RentalListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentalListing");
                 });
 
             modelBuilder.Entity("MotoRent.Web.Models.RentalRequest", b =>

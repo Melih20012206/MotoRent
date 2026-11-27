@@ -17,7 +17,10 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<RentalListing> RentalListings => Set<RentalListing>();
 
     public DbSet<RentalRequest> RentalRequests => Set<RentalRequest>();
+
     public DbSet<FavoriteListing> FavoriteListings => Set<FavoriteListing>();
+
+    public DbSet<RentalListingImage> RentalListingImages => Set<RentalListingImage>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -66,6 +69,14 @@ public class ApplicationDbContext : IdentityDbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             favorite.HasOne(x => x.RentalListing)
+                .WithMany()
+                .HasForeignKey(x => x.RentalListingId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<RentalListingImage>(image =>
+        {
+            image.HasOne(x => x.RentalListing)
                 .WithMany()
                 .HasForeignKey(x => x.RentalListingId)
                 .OnDelete(DeleteBehavior.Cascade);

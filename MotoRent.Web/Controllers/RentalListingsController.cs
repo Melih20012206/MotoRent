@@ -11,6 +11,8 @@ namespace MotoRent.Web.Controllers;
 public class RentalListingsController : Controller
 {
     private const int MinimumPublisherAge = 18;
+    private const int MaxImageBytes = 5 * 1024 * 1024;
+
     private static readonly TimeZoneInfo BulgariaTimeZone =
         TimeZoneInfo.FindSystemTimeZoneById("Europe/Sofia");
 
@@ -119,13 +121,124 @@ public class RentalListingsController : Controller
 
         ViewData["IsFavorite"] = userId is not null &&
             await dbContext.FavoriteListings.AnyAsync(favorite =>
-                favorite.UserId == userId && favorite.RentalListingId == listing.Id);
+                favorite.UserId == userId && favorite.RentalListingId == id);
+
+        var imageIds = await dbContext.RentalListingImages
+            .Where(image => image.RentalListingId == id)
+            .OrderBy(image => image.Id)
+            .Select(image => image.Id)
+            .ToListAsync();
 
         return View(new RentalListingDetailsViewModel
         {
             Listing = listing,
-            Availability = availability
+            Availability = availability,
+            ImageIds = imageIds
         });
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> Image(int id)
+    {
+        var image = await dbContext.RentalListingImages
+            .Where(item => item.Id == id)
+            .Select(item => new { item.Content, item.ContentType })
+            .SingleOrDefaultAsync();
+
+        if (image is null)
+        {
+            return NotFound();
+        }
+
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(image.Content, image.ContentType);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(MaxImageBytes + 64 * 1024)]
+    public async Task<IActionResult> AddImage(int id, IFormFile? photo)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var ownsListing = await dbContext.RentalListings
+            .AnyAsync(listing => listing.Id == id && listing.OwnerId == ownerId);
+
+        if (!ownsListing)
+        {
+            return NotFound();
+        }
+
+        if (photo is null || photo.Length == 0 || photo.Length > MaxImageBytes)
+        {
+            TempData["ErrorMessage"] = "Избери снимка с размер до 5 MB.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        using var stream = new MemoryStream();
+        await photo.CopyToAsync(stream, HttpContext.RequestAborted);
+
+        var content = stream.ToArray();
+        var contentType = GetImageContentType(content);
+
+        if (contentType is null)
+        {
+            TempData["ErrorMessage"] = "Можеш да качваш само JPG или PNG снимки.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        dbContext.RentalListingImages.Add(new RentalListingImage
+        {
+            RentalListingId = id,
+            ContentType = contentType,
+            Content = content
+        });
+
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception)
+            when (exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 547 })
+        {
+            return NotFound();
+        }
+
+        TempData["SuccessMessage"] = "Снимката е добавена.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveImage(int id, int imageId)
+    {
+        var ownerId = userManager.GetUserId(User);
+
+        if (ownerId is null)
+        {
+            return Forbid();
+        }
+
+        var deletedCount = await dbContext.RentalListingImages
+            .Where(image =>
+                image.Id == imageId &&
+                image.RentalListingId == id &&
+                image.RentalListing.OwnerId == ownerId)
+            .ExecuteDeleteAsync();
+
+        if (deletedCount == 0)
+        {
+            return NotFound();
+        }
+
+        TempData["SuccessMessage"] = "Снимката е премахната.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     [HttpGet]
@@ -391,5 +504,24 @@ public class RentalListingsController : Controller
 
         TempData["SuccessMessage"] = "Обявата е публикувана успешно.";
         return RedirectToAction(nameof(Create));
+    }
+
+    private static string? GetImageContentType(byte[] content)
+    {
+        ReadOnlySpan<byte> header = content;
+        ReadOnlySpan<byte> pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        ReadOnlySpan<byte> jpegSignature = [0xFF, 0xD8, 0xFF];
+
+        if (header.StartsWith(pngSignature))
+        {
+            return "image/png";
+        }
+
+        if (header.StartsWith(jpegSignature))
+        {
+            return "image/jpeg";
+        }
+
+        return null;
     }
 }
