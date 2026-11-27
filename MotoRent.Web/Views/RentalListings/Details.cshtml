@@ -1,9 +1,15 @@
-﻿@model MotoRent.Web.Models.RentalListing
+﻿@model RentalListingDetailsViewModel
 
 @inject Microsoft.AspNetCore.Identity.UserManager<Microsoft.AspNetCore.Identity.IdentityUser> UserManager
 
 @{
-    ViewData["Title"] = $"{Model.Make} {Model.Model}";
+    var listing = Model.Listing;
+    ViewData["Title"] = $"{listing.Make} {listing.Model}";
+
+    var categoryName = listing.Category is { } category
+        ? Html.GetEnumSelectList<MotorcycleCategory>()
+            .FirstOrDefault(item => item.Value == ((int)category).ToString())?.Text
+        : null;
 }
 
 <h1 class="my-4">@ViewData["Title"]</h1>
@@ -13,26 +19,38 @@
     <div class="alert alert-success" role="status">@message</div>
 }
 
-<p class="text-muted">@Model.City</p>
-
-@{
-    var categoryName = Model.Category is { } category
-        ? Html.GetEnumSelectList<MotoRent.Web.Models.MotorcycleCategory>()
-            .FirstOrDefault(item => item.Value == ((int)category).ToString())?.Text
-        : null;
-}
-
+<p class="text-muted">@listing.City</p>
 <p>Категория: @(categoryName ?? "Без категория")</p>
-<p class="fw-bold">@Model.DailyPrice.ToString("0.00") € / ден</p>
+<p class="fw-bold">@listing.DailyPrice.ToString("0.00") € / ден</p>
 
 <h2 class="h5">Описание</h2>
-<p style="white-space: pre-wrap">@Model.Description</p>
+<p style="white-space: pre-wrap">@listing.Description</p>
 
-@if (UserManager.GetUserId(User) != Model.OwnerId)
+<section class="my-4" aria-labelledby="availability-heading">
+    <h2 id="availability-heading" class="h5">Наличност за следващите 30 дни</h2>
+
+    <ul class="list-unstyled row row-cols-2 row-cols-sm-4 row-cols-lg-6 g-2">
+        @foreach (var day in Model.Availability)
+        {
+            <li class="col">
+                <div class="border rounded p-2">
+                    <time datetime="@day.Date.ToString("yyyy-MM-dd")"
+                          class="d-block fw-semibold">
+                        @day.Date.ToString("dd.MM.yyyy")
+                    </time>
+                    <span class="badge @(day.IsBooked ? "bg-danger" : "bg-success")">
+                        @(day.IsBooked ? "Зает" : "Свободен")
+                    </span>
+                </div>
+            </li>
+        }
+    </ul>
+</section>
+
+@if (UserManager.GetUserId(User) != listing.OwnerId)
 {
     <a asp-controller="RentalRequests"
        asp-action="Create"
-       asp-route-id="@Model.Id"
+       asp-route-id="@listing.Id"
        class="btn btn-primary">Заяви наем</a>
 }
-

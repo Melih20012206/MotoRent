@@ -82,14 +82,44 @@ public class RentalListingsController : Controller
     {
         var listing = await dbContext.RentalListings
             .AsNoTracking()
-            .SingleOrDefaultAsync(listing => listing.Id == id);
+            .SingleOrDefaultAsync(item => item.Id == id);
 
         if (listing is null)
         {
             return NotFound();
         }
 
-        return View(listing);
+        const int numberOfDays = 30;
+
+        var today = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, BulgariaTimeZone));
+        var lastDay = today.AddDays(numberOfDays - 1);
+
+        var bookings = await dbContext.RentalRequests
+            .Where(request =>
+                request.RentalListingId == id &&
+                request.Status == RentalRequestStatus.Accepted &&
+                request.StartDate <= lastDay &&
+                request.EndDate >= today)
+            .Select(request => new { request.StartDate, request.EndDate })
+            .ToListAsync();
+
+        var availability = new List<RentalAvailabilityDay>(numberOfDays);
+
+        for (var offset = 0; offset < numberOfDays; offset++)
+        {
+            var date = today.AddDays(offset);
+            var isBooked = bookings.Any(booking =>
+                booking.StartDate <= date && booking.EndDate >= date);
+
+            availability.Add(new RentalAvailabilityDay(date, isBooked));
+        }
+
+        return View(new RentalListingDetailsViewModel
+        {
+            Listing = listing,
+            Availability = availability
+        });
     }
 
     [HttpGet]
